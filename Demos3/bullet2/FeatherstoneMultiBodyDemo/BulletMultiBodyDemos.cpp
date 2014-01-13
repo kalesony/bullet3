@@ -333,7 +333,7 @@ btMultiBody* FeatherstoneDemo1::createFeatherstoneMultiBody(class btMultiBodyDyn
 	btVector3 inertia = btVector3 (91,344,253)*scaling*scaling;
 	
 	
-	bool isMultiDof = false;
+	bool isMultiDof = true;
 	btMultiBody * bod = new btMultiBody(n_links, mass, inertia, settings.m_isFixedBase, settings.m_canSleep, isMultiDof);
 //		bod->setHasSelfCollision(false);
 
@@ -510,6 +510,9 @@ btMultiBody* FeatherstoneDemo1::createFeatherstoneMultiBody(class btMultiBodyDyn
 			bod->getLink(i).m_collider=col;
 			//app->drawBox(halfExtents, pos,quat);
 		}
+
+		if(isMultiDof)
+			bod->finalizeMultiDof();
 
 	}
 	world->addMultiBody(bod);
