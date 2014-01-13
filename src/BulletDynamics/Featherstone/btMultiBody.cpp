@@ -337,15 +337,6 @@ void btMultiBody::setupFixed(int i,
 	m_links[i].m_jointType = btMultibodyLink::eFixed;
 	m_links[i].m_dofCount = 0;
 	m_links[i].m_posVarCount = 0;
-	//m_links[i].setAxisTop(0, 1.f, 0.f, 0.f);
-	//m_links[i].setAxisTop(1, 0.f, 1.f, 0.f);
-	//m_links[i].setAxisTop(2, 0.f, 0.f, 1.f);
-	//m_links[i].setAxisBottom(0, m_links[i].getAxisTop(0).cross(thisPivotToThisComOffset));
-	//m_links[i].setAxisBottom(1, m_links[i].getAxisTop(1).cross(thisPivotToThisComOffset));
-	//m_links[i].setAxisBottom(2, m_links[i].getAxisTop(2).cross(thisPivotToThisComOffset));
-	//m_links[i].m_jointPos[0] = m_links[i].m_jointPos[1] = m_links[i].m_jointPos[2] = 0.f; m_links[i].m_jointPos[3] = 1.f;
-	//m_links[i].m_jointTorque[0] = m_links[i].m_jointTorque[1] = m_links[i].m_jointTorque[2] = 0.f;
-
 
 	if (disableParentCollision)
 		m_links[i].m_flags |=BT_MULTIBODYLINKFLAGS_DISABLE_PARENT_COLLISION;    
