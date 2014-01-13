@@ -114,6 +114,10 @@ btMultiBody::btMultiBody(int n_links,
 		m_realBuf.resize(6 + 2*n_links);
 		m_posVarCnt = n_links;
 	}
+	else
+	{
+		m_realBuf.resize(6);
+	}
    
 	m_links.resize(n_links);
 	m_matrixBuf.resize(n_links + 1);
