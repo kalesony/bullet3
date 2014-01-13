@@ -167,7 +167,10 @@ void btMultiBody::setupPrismatic(int i,
 	if(m_isMultiDof)
 		m_links[i].updateCacheMultiDof();
 	else
-		m_links[i].updateCache();	
+		m_links[i].updateCache();
+	//
+	if(m_isMultiDof)
+		resizeInternalMultiDofBuffers();
 	//
 	if(m_isMultiDof)
 		updateLinksDofOffsets();
@@ -210,7 +213,10 @@ void btMultiBody::setupRevolute(int i,
 	if(m_isMultiDof)
 		m_links[i].updateCacheMultiDof();
 	else
-		m_links[i].updateCache();	
+		m_links[i].updateCache();
+	//
+	if(m_isMultiDof)
+		resizeInternalMultiDofBuffers();
 	//
 	if(m_isMultiDof)
 		updateLinksDofOffsets();
@@ -254,7 +260,10 @@ void btMultiBody::setupSpherical(int i,
 	if (disableParentCollision)
 		m_links[i].m_flags |=BT_MULTIBODYLINKFLAGS_DISABLE_PARENT_COLLISION;    
 	//
-	m_links[i].updateCacheMultiDof();	
+	m_links[i].updateCacheMultiDof();
+	//
+	if(m_isMultiDof)
+		resizeInternalMultiDofBuffers();
 	//
 	updateLinksDofOffsets();
 }
@@ -303,18 +312,18 @@ void btMultiBody::setupPlanar(int i,
     //
 	m_links[i].updateCacheMultiDof();
 	//
+	resizeInternalMultiDofBuffers();
+	//
 	updateLinksDofOffsets();
 }
 #endif
 
-void btMultiBody::finalizeMultiDof()
+void btMultiBody::resizeInternalMultiDofBuffers()
 {
 	btAssert(m_isMultiDof);
 
 	m_realBuf.resize(6 + m_dofCount + m_dofCount*m_dofCount + 6 + m_dofCount);			//m_dofCount for joint-space vels + m_dofCount^2 for "D" matrices + delta-pos vector (6 base "vels" + joint "vels")
 	m_vectorBuf.resize(2 * m_dofCount);													//two 3-vectors (i.e. one six-vector) for each system dof	("h" matrices)
-
-	updateLinksDofOffsets();
 }
 	
 int btMultiBody::getParent(int i) const

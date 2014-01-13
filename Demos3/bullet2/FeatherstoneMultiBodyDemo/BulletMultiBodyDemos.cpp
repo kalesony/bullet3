@@ -511,9 +511,6 @@ btMultiBody* FeatherstoneDemo1::createFeatherstoneMultiBody(class btMultiBodyDyn
 			//app->drawBox(halfExtents, pos,quat);
 		}
 
-		if(isMultiDof)
-			bod->finalizeMultiDof();
-
 	}
 	world->addMultiBody(bod);
 

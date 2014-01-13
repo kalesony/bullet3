@@ -486,8 +486,7 @@ public:
 		return m_hasSelfCollision;
 	}
 
-	bool isMultiDof() { return m_isMultiDof; }
-	void finalizeMultiDof();
+	bool isMultiDof() { return m_isMultiDof; }	
 
 	void useRK4Integration(bool use) { m_useRK4 = use; }
 	bool isUsingRK4Integration() const { return m_useRK4; }
@@ -516,6 +515,8 @@ private:
 			dofOffset += m_links[bidx].m_dofCount; cfgOffset += m_links[bidx].m_posVarCount;
 		}
 	}
+
+	void resizeInternalMultiDofBuffers();
 
 	void mulMatrix(btScalar *pA, btScalar *pB, int rowsA, int colsA, int rowsB, int colsB, btScalar *pC) const;
 	

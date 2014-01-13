@@ -266,8 +266,6 @@ btMultiBody* MultiDofDemo::createFeatherstoneMultiBody_testMultiDof(btMultiBodyD
 			pMultiBody->setupSpherical(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f), parentComToCurrentPivot, currentPivotToCurrentCom, false);		
 	}
 
-	pMultiBody->finalizeMultiDof();
-
 	///
 	pWorld->addMultiBody(pMultiBody);
 	///
