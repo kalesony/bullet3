@@ -333,7 +333,7 @@ btMultiBody* FeatherstoneDemo1::createFeatherstoneMultiBody(class btMultiBodyDyn
 	btVector3 inertia = btVector3 (91,344,253)*scaling*scaling;
 	
 	
-	bool isMultiDof = true;
+	bool isMultiDof = false;
 	btMultiBody * bod = new btMultiBody(n_links, mass, inertia, settings.m_isFixedBase, settings.m_canSleep, isMultiDof);
 //		bod->setHasSelfCollision(false);
 
