@@ -94,6 +94,14 @@ public:
                        const btVector3 &parentComToThisComOffset,			// vector from parent COM to this COM, in PARENT frame                       
 					   bool disableParentCollision=false);		
 #endif
+
+	void setupFixed(int i,											// 0 to num_links-1
+                       btScalar mass,
+                       const btVector3 &inertia,
+                       int parent,
+                       const btQuaternion &rotParentToThis,		// rotate points in parent frame to this frame, when q = 0                       
+                       const btVector3 &parentComToThisComOffset,			// vector from parent COM to this COM, in PARENT frame
+					   bool disableParentCollision=false);	
 	
 	const btMultibodyLink& getLink(int index) const
 	{
