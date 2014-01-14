@@ -14,6 +14,8 @@
 #include "OpenGLWindow/GLInstancingRenderer.h"
 #include "BulletCollision/CollisionShapes/btShapeHull.h"
 
+MultiDofDemo *SimpleGuiHandler::m_pDemo = 0;			//for simpler gui (static callbacks)
+
 static bool g_firstInit = true;
 static float scaling = 0.4f;
 static float friction = 1.;
@@ -38,6 +40,7 @@ MultiDofDemo::MultiDofDemo(SimpleOpenGL3App* app)
 }
 MultiDofDemo::~MultiDofDemo()
 {
+	m_multiBodies.clear();
 }
 
 void	MultiDofDemo::stepSimulation(float deltaTime)
@@ -46,6 +49,39 @@ void	MultiDofDemo::stepSimulation(float deltaTime)
 	float internalTimeStep = 1./240.f;
 	m_dynamicsWorld->stepSimulation(deltaTime,10,internalTimeStep);
 //		CProfileManager::dumpAll();
+
+	SimpleGuiHandler::m_pDemo = this;
+}
+
+void SimpleGuiHandler::onGravityToggle(int buttonId, int state)
+{
+	if(m_pDemo && m_pDemo->m_dynamicsWorld)
+		m_pDemo->m_dynamicsWorld->setGravity(btVector3(0, (state ? 0 : -9.81), 0));
+}
+
+void SimpleGuiHandler::onDampingToggle(int buttonId, int state)
+{
+	if(m_pDemo)
+	{
+		btScalar linDamp = state ? 0 : 0.1f;
+		btScalar angDamp = state ? 0 : 0.9f;
+
+		for(unsigned int i = 0; i < m_pDemo->m_multiBodies.size(); ++i)
+		{
+			btMultiBody *pMultiBody = m_pDemo->m_multiBodies[i];
+			if(pMultiBody)
+			{
+				pMultiBody->setLinearDamping(linDamp);
+				pMultiBody->setAngularDamping(angDamp);
+			}
+		}
+	}	
+}
+
+void MultiDofDemo::initGUI(GwenUserInterface *pGUI)
+{
+	pGUI->registerToggleButtonAndProvideDedicatedCallback(123, "Gravity off", SimpleGuiHandler::onGravityToggle, 60);			//button ids are quite useless in this context but... ;)
+	pGUI->registerToggleButtonAndProvideDedicatedCallback(124, "Damping off", SimpleGuiHandler::onDampingToggle, 80);
 }
 
 
@@ -104,7 +140,8 @@ void	MultiDofDemo::initPhysics()
 	btVector3 linkHalfExtents(0.05, 0.37, 0.1);
 	btVector3 baseHalfExtents(0.05, 0.37, 0.1);
 
-	btMultiBody* mbC = createFeatherstoneMultiBody_testMultiDof(world, numLinks, btVector3(-0.4f, 3.f, 0.f), linkHalfExtents, baseHalfExtents, spherical, floating);	
+	btMultiBody* mbC = createFeatherstoneMultiBody_testMultiDof(world, numLinks, btVector3(-0.4f, 3.f, 0.f), linkHalfExtents, baseHalfExtents, spherical, floating);
+	m_multiBodies.push_back(mbC);
 	//mbC->forceMultiDof();							//if !spherical, you can comment this line to check the 1DoF algorithm		
 
 	mbC->setCanSleep(canSleep);	
@@ -120,7 +157,7 @@ void	MultiDofDemo::initPhysics()
 		mbC->setAngularDamping(0.9f);
 	}
 	//
-	m_dynamicsWorld->setGravity(btVector3(0, -9.81 ,0));	
+	m_dynamicsWorld->setGravity(btVector3(0, -9.81 ,0));
 	//////////////////////////////////////////////
 	if(numLinks > 0)
 	{			
@@ -263,7 +300,13 @@ btMultiBody* MultiDofDemo::createFeatherstoneMultiBody_testMultiDof(btMultiBodyD
 			pMultiBody->setupRevolute(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f), hingeJointAxis, parentComToCurrentPivot, currentPivotToCurrentCom, false);
 		else
 			//pMultiBody->setupPlanar(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f)/*quat0*/, btVector3(1, 0, 0), parentComToCurrentPivot*2, false);
-			pMultiBody->setupSpherical(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f), parentComToCurrentPivot, currentPivotToCurrentCom, false);		
+			//
+		{
+			if(i < numLinks - 1)
+				pMultiBody->setupSpherical(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f), parentComToCurrentPivot, currentPivotToCurrentCom, false);
+			else
+				pMultiBody->setupFixed(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f)/*quat0*/, parentComToCurrentPivot*2, false);
+		}
 	}
 
 	///
