@@ -1,6 +1,8 @@
 #ifndef DEMO_INTERFACE_H
 #define DEMO_INTERFACE_H
 
+#include "../GpuDemos/gwenUserInterface.h"
+
 struct SimpleOpenGL3App;
 
 class BulletDemoInterface
@@ -20,6 +22,8 @@ public:
 	virtual bool	mouseMoveCallback(float x,float y)=0;
 	virtual bool	mouseButtonCallback(int button, int state, float x, float y)=0;
 	virtual bool	keyboardCallback(int key, int state)=0;
+
+	virtual void initGUI(GwenUserInterface *pGui) {}
 
 };
 

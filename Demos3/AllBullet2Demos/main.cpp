@@ -8,6 +8,8 @@
 
 #define DEMO_SELECTION_COMBOBOX 13
 
+void initGUI();
+
 static SimpleOpenGL3App* app=0;
 static GwenUserInterface* gui  = 0;
 static int sCurrentDemoIndex = 0;
@@ -104,8 +106,10 @@ void selectDemo(int demoIndex)
 	{
 		sCurrentDemo = (*allDemos[demoIndex].m_createFunc)(app);
 		if (sCurrentDemo)
+		{
 			sCurrentDemo->initPhysics();
-
+			sCurrentDemo->initGUI(gui);
+		}
 	}
 }
 
@@ -119,6 +123,7 @@ void	MyComboBoxCallback(int comboId, const char* item)
 		{
 			if (strcmp(item,allNames[i])==0)
 			{
+				initGUI();
 				selectDemo(i);
 				saveCurrentDemoEntry(sCurrentDemoIndex);
 				break;
@@ -126,6 +131,32 @@ void	MyComboBoxCallback(int comboId, const char* item)
 		}
 	}
 	
+}
+
+void initGUI()
+{
+	if(gui)
+		gui->reset();
+	else
+	{
+		sth_stash* fontstash=app->getFontStash();
+		gui = new GwenUserInterface;
+		gui->init(app->m_instancingRenderer->getScreenWidth(),app->m_instancingRenderer->getScreenHeight(),fontstash,app->m_window->getRetinaScale());
+
+		int numDemos = sizeof(allDemos)/sizeof(BulletDemoEntry);		
+	
+		for (int i=0;i<numDemos;i++)
+		{
+			allNames.push_back(allDemos[i].m_name);
+		}
+	}
+		
+	gui->registerComboBox(DEMO_SELECTION_COMBOBOX,allNames.size(),&allNames[0],sCurrentDemoIndex);	
+		
+	//const char* names2[] = {"comboF", "comboG","comboH"};
+	//gui->registerComboBox(2,3,&names2[0],0);
+
+	gui->setComboBoxCallback(MyComboBoxCallback);	
 }
 
 int main(int argc, char* argv[])
@@ -145,26 +176,9 @@ int main(int argc, char* argv[])
 
 	GLint err = glGetError();
     assert(err==GL_NO_ERROR);
-	
-	sth_stash* fontstash=app->getFontStash();
-	gui = new GwenUserInterface;
-	gui->init(width,height,fontstash,app->m_window->getRetinaScale());
 
-	int numDemos = sizeof(allDemos)/sizeof(BulletDemoEntry);
-	
-	for (int i=0;i<numDemos;i++)
-	{
-		allNames.push_back(allDemos[i].m_name);
-	}
-		
+	initGUI();
 	selectDemo(loadCurrentDemoEntry());
-	gui->registerComboBox(DEMO_SELECTION_COMBOBOX,allNames.size(),&allNames[0],sCurrentDemoIndex);
-		
-	//const char* names2[] = {"comboF", "comboG","comboH"};
-	//gui->registerComboBox(2,3,&names2[0],0);
-
-	gui->setComboBoxCallback(MyComboBoxCallback);
-
 
 	do
 	{

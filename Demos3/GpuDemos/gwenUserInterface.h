@@ -26,12 +26,15 @@ class GwenUserInterface
 		bool	mouseButtonCallback(int button, int state, float x, float y);
 
 		void	setToggleButtonCallback(b3ToggleButtonCallback callback);
-		void	registerToggleButton(int buttonId, const char* name);
+		void	registerToggleButton(int buttonId, const char* name, int yOffset = 0);
+		void	registerToggleButtonAndProvideDedicatedCallback(int buttonId, const char* name, b3ToggleButtonCallback callback, int yOffset = 0);
 
 		void	setComboBoxCallback(b3ComboBoxCallback callback);
-		void	registerComboBox(int buttonId, int numItems, const char** items, int startItem = 0);
+		void	registerComboBox(int buttonId, int numItems, const char** items, int startItem = 0, int yOffset = 0);
 
 		void	setStatusBarMessage(const char* message, bool isLeft=true);
+
+		void reset();
 };
 
 #endif //_GWEN_USER_INTERFACE_H

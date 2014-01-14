@@ -38,7 +38,8 @@ struct GwenInternalData
 	Gwen::Controls::Label* m_rightStatusBar;
 	Gwen::Controls::Label* m_leftStatusBar;
 
-	b3AlignedObjectArray<struct Gwen::Event::Handler*>	m_handlers;
+	b3AlignedObjectArray<struct Gwen::Event::Handler*>	m_handlers, m_oldHandlers;			//old handlers for delayed deletion (deferred till ~GwenUserInterface for simplicity)
+	b3AlignedObjectArray<Gwen::Controls::Base*> m_controls;
 	b3ToggleButtonCallback			m_toggleButtonCallback;
 	b3ComboBoxCallback				m_comboBoxCallback;
 
@@ -58,8 +59,14 @@ GwenUserInterface::~GwenUserInterface()
 		delete m_data->m_handlers[i];
 	}
 
-	m_data->m_handlers.clear();
+	for (int i=0;i<m_data->m_oldHandlers.size();i++)
+	{
+		delete m_data->m_oldHandlers[i];
+	}
 
+	m_data->m_handlers.clear();
+	m_data->m_oldHandlers.clear();
+	m_data->m_controls.clear();
 
 	delete m_data->pCanvas;
 
@@ -71,6 +78,22 @@ GwenUserInterface::~GwenUserInterface()
 	delete prim;
 	delete coreRend;
 
+}
+
+void GwenUserInterface::reset()
+{
+	for (int i=0;i<m_data->m_handlers.size();i++)	
+		m_data->m_oldHandlers.push_back(m_data->m_handlers[i]);
+
+	m_data->m_handlers.clear();
+
+	for(int i = 0; i < m_data->m_controls.size(); ++i)
+		m_data->pCanvas->AddDelayedDelete(m_data->m_controls[i]);	
+
+	m_data->m_controls.clear();
+
+	m_data->m_toggleButtonCallback = 0;
+	m_data->m_comboBoxCallback = 0;
 }
 		
 
@@ -150,6 +173,45 @@ struct MyButtonHander   :public Gwen::Event::Handler
 		int tog = but->GetToggleState();
 		if (m_data->m_toggleButtonCallback)
 			(*m_data->m_toggleButtonCallback)(m_buttonId,tog);
+	}
+
+};
+
+struct MyDedicatedComboBoxHandler : public Gwen::Event::Handler
+{
+	b3ComboBoxCallback	m_comboBoxCallback;
+	int m_controlId;
+
+	MyDedicatedComboBoxHandler(int comboId) : m_controlId(comboId)
+	{}
+
+	void onSelect( Gwen::Controls::Base* pControl )
+	{
+		Gwen::Controls::ComboBox* but = (Gwen::Controls::ComboBox*) pControl;		
+		Gwen::String str = Gwen::Utility::UnicodeToString(	but->GetSelectedItem()->GetText());
+		
+		if (m_comboBoxCallback)
+			(*m_comboBoxCallback)(m_controlId, str.c_str());
+	}
+
+};
+
+struct MyDedicatedToggleButtonHandler : public Gwen::Event::Handler
+{
+	b3ToggleButtonCallback	m_toggleButtonCallback;
+	int m_controlId;
+
+	MyDedicatedToggleButtonHandler(int buttonId) : m_controlId(buttonId)
+	{}
+
+	void onButtonA( Gwen::Controls::Base* pControl )
+	{
+		Gwen::Controls::Button* but = (Gwen::Controls::Button*) pControl;
+		int dep = but->IsDepressed();
+		int tog = but->GetToggleState();
+		
+		if (m_toggleButtonCallback)
+			(*m_toggleButtonCallback)(m_controlId, tog);
 	}
 
 };
@@ -264,7 +326,7 @@ void	GwenUserInterface::setToggleButtonCallback(b3ToggleButtonCallback callback)
 {
 	m_data->m_toggleButtonCallback = callback;
 }
-void	GwenUserInterface::registerToggleButton(int buttonId, const char* name)
+void	GwenUserInterface::registerToggleButton(int buttonId, const char* name, int yOffset)
 {
 	assert(m_data);
 	assert(m_data->m_demoPage);
@@ -272,14 +334,41 @@ void	GwenUserInterface::registerToggleButton(int buttonId, const char* name)
 	Gwen::Controls::Button* but = new Gwen::Controls::Button(m_data->m_demoPage->GetPage());
 	
 	///some heuristic to find the button location
-	int ypos = m_data->m_handlers.size()*20;
-	but->SetPos(10, ypos );
-	but->SetWidth( 100 );
-	//but->SetBounds( 200, 30, 300, 200 );
-	
 	MyButtonHander* handler = new MyButtonHander(m_data, buttonId);
 	m_data->m_handlers.push_back(handler);
+	m_data->m_controls.push_back(but);	
+	//
+	int ypos = m_data->m_handlers.size()*20 + yOffset;
+	but->SetPos(10, ypos );
+	but->SetWidth( 100 );
+	//but->SetBounds( 200, 30, 300, 200 );	
+	
 	but->onToggle.Add(handler, &MyButtonHander::onButtonA);
+	but->SetIsToggle(true);
+	but->SetToggleState(false);
+	but->SetText(name);
+
+}
+
+void GwenUserInterface::registerToggleButtonAndProvideDedicatedCallback(int buttonId, const char* name, b3ToggleButtonCallback callback, int yOffset)
+{
+	assert(m_data);
+	assert(m_data->m_demoPage);
+
+	Gwen::Controls::Button* but = new Gwen::Controls::Button(m_data->m_demoPage->GetPage());
+	
+	///some heuristic to find the button location
+	MyDedicatedToggleButtonHandler *handler = new MyDedicatedToggleButtonHandler(buttonId);
+	handler->m_toggleButtonCallback = callback;
+	m_data->m_handlers.push_back(handler);
+	m_data->m_controls.push_back(but);
+	//
+	int ypos = m_data->m_handlers.size()*20 + yOffset;
+	but->SetPos(10, ypos );
+	but->SetWidth( 100 );
+	//but->SetBounds( 200, 30, 300, 200 );	
+	
+	but->onToggle.Add(handler, &MyDedicatedToggleButtonHandler::onButtonA);
 	but->SetIsToggle(true);
 	but->SetToggleState(false);
 	but->SetText(name);
@@ -291,14 +380,15 @@ void	GwenUserInterface::setComboBoxCallback(b3ComboBoxCallback callback)
 	m_data->m_comboBoxCallback = callback;
 }
 
-void	GwenUserInterface::registerComboBox(int comboboxId, int numItems, const char** items, int startItem)
+void	GwenUserInterface::registerComboBox(int comboboxId, int numItems, const char** items, int startItem, int yOffset)
 {
 	Gwen::Controls::ComboBox* combobox = new Gwen::Controls::ComboBox(m_data->m_demoPage->GetPage());
 	MyComboBoxHander* handler = new MyComboBoxHander(m_data, comboboxId);
 	m_data->m_handlers.push_back(handler);
+	m_data->m_controls.push_back(combobox);
 	
 	combobox->onSelection.Add(handler,&MyComboBoxHander::onSelect);
-	int ypos = m_data->m_handlers.size()*20;
+	int ypos = m_data->m_handlers.size()*20 + yOffset;
 	combobox->SetPos(10, ypos );
 	combobox->SetWidth( 100 );
 	//box->SetPos(120,130);
