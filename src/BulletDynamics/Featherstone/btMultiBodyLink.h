@@ -378,6 +378,7 @@ struct btMultibodyLink
 #ifdef BT_MULTIBODYLINK_INCLUDE_PLANAR_JOINTS
 		ePlanar = 3,
 #endif
+		eFixed = 4,
 		eInvalid
 	};
 
@@ -507,6 +508,13 @@ struct btMultibodyLink
 				break;
 			}
 #endif
+			case eFixed:
+			{
+				m_cachedRotParentToThis = m_zeroRotParentToThis;
+				m_cachedRVector = quatRotate(m_cachedRotParentToThis,m_eVector);
+
+				break;
+			}
 		}
 	}
 };
